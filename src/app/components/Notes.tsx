@@ -103,26 +103,26 @@ export default function Notes() {
         )}
 
         {/*   Notes display section */}
-        <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
-          {isLoading ? (
-            <p className="text-muted-foreground text-center py-8">
-              Loading notes...
-            </p>
-          ) : notes.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No notes yet. Click the + button to create one!
-            </p>
-          ) : (
-            notes.map((note) => (
+        {isLoading ? (
+          <p className="text-muted-foreground text-center py-8">
+            Loading notes...
+          </p>
+        ) : notes.length === 0 ? (
+          <p className="text-muted-foreground text-center py-8">
+            No notes yet. Click the + button to create one!
+          </p>
+        ) : (
+          <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 space-y-4">
+            {notes.map((note) => (
               <NoteCard
                 key={note.id}
                 note={note}
                 onUpdate={updateNote}
                 onDelete={deleteNote}
               />
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Floating Action Button */}
