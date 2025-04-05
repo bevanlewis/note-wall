@@ -2,17 +2,23 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useNotes } from "@/hooks/useNotes";
+import { useAuth } from "@/contexts/AuthContext";
 import { NoteCard } from "@/components/NoteCard";
 import { AddNoteForm } from "@/components/AddNoteForm";
 import { FeedbackMessage } from "@/components/FeedbackMessage";
+import { AuthForm } from "@/components/AuthForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { LogOut } from "lucide-react";
 
 export default function Notes() {
   //   State for managing UI
   const [isAddingNote, setIsAddingNote] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Get auth context
+  const { user, loading: authLoading, signOut } = useAuth();
 
   //   Use our custom hook for note management
   const {
@@ -27,10 +33,12 @@ export default function Notes() {
     deleteNote,
   } = useNotes();
 
-  //   Load notes on component mount
+  //   Load notes on component mount and when user changes
   useEffect(() => {
-    loadNotes();
-  }, []);
+    if (user) {
+      loadNotes();
+    }
+  }, [user]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -58,6 +66,24 @@ export default function Notes() {
     searchNotes(query);
   };
 
+  // Show loading state while checking auth
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Show auth form if not logged in
+  if (!user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <AuthForm />
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="max-w-7xl mx-auto p-4">
@@ -68,6 +94,15 @@ export default function Notes() {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-bold">Quick Notes</h1>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={signOut}
+              className="h-10 w-10"
+              aria-label="Sign out"
+            >
+              <LogOut className="h-5 w-5" />
+            </Button>
           </div>
 
           {/*   Search input */}

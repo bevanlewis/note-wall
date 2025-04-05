@@ -3,12 +3,14 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { Note, FeedbackMessage, MAX_NOTE_LENGTH } from "@/types/notes";
 import debounce from "lodash/debounce";
+import { useAuth } from "@/contexts/AuthContext";
 
 export const useNotes = () => {
   const [notes, setNotes] = useState<Note[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [feedback, setFeedback] = useState<FeedbackMessage | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const { user } = useAuth();
 
   //   Function to show feedback messages
   const showFeedback = (type: FeedbackMessage["type"], text: string) => {
@@ -18,6 +20,8 @@ export const useNotes = () => {
 
   //   Load notes from Supabase
   const loadNotes = async () => {
+    if (!user) return;
+
     setIsLoading(true);
     try {
       const { data, error } = await supabase
@@ -48,6 +52,8 @@ export const useNotes = () => {
   //   Search notes
   const searchNotes = useCallback(
     debounce(async (query: string) => {
+      if (!user) return;
+
       if (!query.trim()) {
         loadNotes();
         return;
@@ -80,11 +86,13 @@ export const useNotes = () => {
         setIsSearching(false);
       }
     }, 300),
-    []
+    [user]
   );
 
   //   Add a new note
   const addNote = async (content: string) => {
+    if (!user) return false;
+
     const trimmedContent = content.trim();
 
     if (!trimmedContent) {
@@ -103,7 +111,12 @@ export const useNotes = () => {
     try {
       const { data, error } = await supabase
         .from("notes")
-        .insert([{ content: trimmedContent }])
+        .insert([
+          {
+            content: trimmedContent,
+            user_id: user.id,
+          },
+        ])
         .select()
         .single();
 
@@ -130,6 +143,8 @@ export const useNotes = () => {
 
   //   Update a note
   const updateNote = async (id: string, content: string) => {
+    if (!user) return false;
+
     const trimmedContent = content.trim();
 
     if (!trimmedContent) {
@@ -153,6 +168,7 @@ export const useNotes = () => {
           updated_at: new Date().toISOString(),
         })
         .eq("id", id)
+        .eq("user_id", user.id)
         .select()
         .single();
 
@@ -179,8 +195,14 @@ export const useNotes = () => {
 
   //   Delete a note
   const deleteNote = async (id: string) => {
+    if (!user) return false;
+
     try {
-      const { error } = await supabase.from("notes").delete().eq("id", id);
+      const { error } = await supabase
+        .from("notes")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", user.id);
 
       if (error) throw error;
 
